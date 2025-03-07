@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .action-buttons button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .action-buttons button:hover {
+            background-color: #c82333;
+        }
+        .loading {
+            text-align: center;
+            font-size: 20px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Panel de Administración</h1>
+        <div class="loading" id="loading">Cargando registros...</div>
+        <table id="records-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>URL</th>
+                    <th>Fecha de Creación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAw5Hior23_BYqV2AV74uPL5T7bdLONNw",
+            authDomain: "qr-verificacion.firebaseapp.com",
+            projectId: "qr-verificacion",
+            storageBucket: "qr-verificacion.appspot.com",
+            messagingSenderId: "637082385886",
+            appId: "1:637082385886:web:2802f5588bfd0e1e26314f",
+            measurementId: "G-KNMFREPHXK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function cargarRegistros() {
+            const loadingDiv = document.getElementById("loading");
+            const recordsTable = document.getElementById("records-table");
+            const tbody = recordsTable.querySelector("tbody");
+            tbody.innerHTML = "";
+            let registros = [];
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "qr_codes"));
+                querySnapshot.forEach((doc) => {
+                    registros.push({ id: doc.id, ...doc.data() });
+                });
+
+                if (registros.length > 0) {
+                    registros.forEach((registro) => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${registro.id}</td>
+                            <td>${registro.url}</td>
+                            <td>${registro.createdAt.toDate().toLocaleString()}</td>
+                            <td class="action-buttons">
+                                <button onclick="eliminarRegistro('${registro.id}')"><i class="fas fa-trash-alt"></i> Eliminar</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    recordsTable.style.display = "table";
+                    loadingDiv.style.display = "none";
+                } else {
+                    loadingDiv.textContent = "No hay registros.";
+                }
+            } catch (error) {
+                console.error("Error al cargar registros:", error);
+                loadingDiv.textContent = "Error al cargar registros.";
+            }
+        }
+
+        window.eliminarRegistro = async function (id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+                try {
+                    await deleteDoc(doc(db, "qr_codes", id));
+                    alert("Registro eliminado exitosamente.");
+                    cargarRegistros();
+                } catch (error) {
+                    console.error("Error al eliminar registro:", error);
+                    alert("Error al eliminar registro.");
+                }
+            }
+        };
+
+        // Cargar registros al cargar la página
+        cargarRegistros();
+    </script>
+</body>
+</html>

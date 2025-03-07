@@ -1,0 +1,45 @@
+<!-- redirigir.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirigiendo...</title>
+</head>
+<body>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAw5Hior23_BYqVv2AV74uPL5T7bdLONNw",
+            authDomain: "qr-verificacion.firebaseapp.com",
+            projectId: "qr-verificacion",
+            storageBucket: "qr-verificacion.appspot.com",
+            messagingSenderId: "637082385886",
+            appId: "1:637082385886:web:2802f5588bfd0e1e26314f",
+            measurementId: "G-KNMFREPHXK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        async function redirigir() {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get("id");
+            if (!id) return;
+            
+            const docRef = doc(db, "qr_codes", id);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                window.location.href = docSnap.data().url;
+            } else {
+                document.body.innerHTML = "<h1>Error: QR no encontrado</h1>";
+            }
+        }
+        
+        redirigir();
+    </script>
+</body>
+</html>

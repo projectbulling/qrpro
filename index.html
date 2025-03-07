@@ -167,8 +167,8 @@
         <h1>Generador de Código QR Personalizado</h1>
         
         <div class="form-group">
-            <label for="url">URL o texto para el código QR:</label>
-            <input type="text" id="url" placeholder="Ingresa la URL o texto" class="full-width">
+            <label for="url">URL para el código QR:</label>
+            <input type="text" id="url" placeholder="Ingresa la URL" class="full-width">
             <button id="generate-btn" onclick="generarQR()">Generar QR</button>
         </div>
 
@@ -193,7 +193,6 @@
                 <div class="tabs">
                     <div class="tab active" data-tab="qr-options">QR</div>
                     <div class="tab" data-tab="logo-options">Logo</div>
-                    <div class="tab" data-tab="text-options">Texto</div>
                 </div>
                 
                 <!-- Opciones del QR -->
@@ -239,26 +238,6 @@
                             <label>Transparencia: <span id="logo-opacity-value">100%</span></label>
                             <input type="range" id="logo-opacity" min="0" max="100" value="100">
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Opciones del texto -->
-                <div id="text-options" class="tab-content">
-                    <div class="form-group">
-                        <label for="caption">Texto:</label>
-                        <input type="text" id="caption" placeholder="Escanea para más información">
-                    </div>
-                    <div class="form-group">
-                        <label for="text-color">Color del texto:</label>
-                        <input type="color" id="text-color" value="#000000">
-                    </div>
-                    <div class="form-group">
-                        <label>Tamaño del texto: <span id="text-size-value">16px</span></label>
-                        <input type="range" id="text-size" min="8" max="32" value="16">
-                    </div>
-                    <div class="form-group">
-                        <label>Posición Y: <span id="text-y-value">25px</span></label>
-                        <input type="range" id="text-y" min="0" max="80" value="25">
                     </div>
                 </div>
             </div>
@@ -346,8 +325,7 @@
         // Actualiza la previsualización cuando cambian los controles
         const controlsToWatch = [
             "qr-foreground", "qr-background", "qr-size",
-            "logo-size", "logo-x", "logo-y", "logo-opacity",
-            "caption", "text-color", "text-size", "text-y"
+            "logo-size", "logo-x", "logo-y", "logo-opacity"
         ];
         
         controlsToWatch.forEach(id => {
@@ -365,10 +343,6 @@
                         document.getElementById("logo-y-value").textContent = `${this.value}%`;
                     } else if (id === "logo-opacity") {
                         document.getElementById("logo-opacity-value").textContent = `${this.value}%`;
-                    } else if (id === "text-size") {
-                        document.getElementById("text-size-value").textContent = `${this.value}px`;
-                    } else if (id === "text-y") {
-                        document.getElementById("text-y-value").textContent = `${this.value}px`;
                     }
                     
                     // Regenerar QR si cambia el tamaño
@@ -422,12 +396,12 @@
         function adjustCanvasSize() {
             const size = parseInt(document.getElementById("qr-size").value);
             canvas.width = size;
-            canvas.height = size + 80; // Espacio extra para el texto
+            canvas.height = size; // Sin espacio extra ya que no hay texto
             
             // Ajustar el contenedor del canvas
             const container = document.querySelector(".canvas-container");
             container.style.width = `${size}px`;
-            container.style.height = `${size + 80}px`;
+            container.style.height = `${size}px`;
         }
         
         // Función para renderizar la previsualización
@@ -455,19 +429,6 @@
                 ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
                 ctx.globalAlpha = 1.0;
             }
-            
-            // Dibujar texto si existe
-            const caption = document.getElementById("caption").value;
-            if (caption) {
-                const textColor = document.getElementById("text-color").value;
-                const textSize = parseInt(document.getElementById("text-size").value);
-                const textY = size + parseInt(document.getElementById("text-y").value);
-                
-                ctx.fillStyle = textColor;
-                ctx.font = `bold ${textSize}px Arial`;
-                ctx.textAlign = "center";
-                ctx.fillText(caption, size / 2, textY);
-            }
         }
         
         // Obtener configuración actual del QR
@@ -482,13 +443,7 @@
                     logoX: parseInt(document.getElementById("logo-x").value),
                     logoY: parseInt(document.getElementById("logo-y").value),
                     logoOpacity: parseInt(document.getElementById("logo-opacity").value)
-                } : null,
-                textSettings: {
-                    caption: document.getElementById("caption").value,
-                    textColor: document.getElementById("text-color").value,
-                    textSize: parseInt(document.getElementById("text-size").value),
-                    textY: parseInt(document.getElementById("text-y").value)
-                }
+                } : null
             };
         }
         
@@ -520,7 +475,7 @@
         window.generarQR = async function () {
             const url = document.getElementById("url").value;
             if (!url) {
-                alert("Ingresa una URL o texto válido");
+                alert("Ingresa una URL válida");
                 return;
             }
             
@@ -714,10 +669,6 @@
                 document.getElementById("cloud-save-btn").disabled = false;
             }
         };
-        
-        // Inicializar los controles
-        document.getElementById("text-size-value").textContent = document.getElementById("text-size").value + "px";
-        document.getElementById("text-y-value").textContent = document.getElementById("text-y").value + "px";
     </script>
 </body>
 </html>

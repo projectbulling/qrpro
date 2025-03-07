@@ -38,6 +38,12 @@
         th {
             background-color: #f2f2f2;
         }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
         .action-buttons {
             display: flex;
             justify-content: center;
@@ -56,14 +62,59 @@
         }
         .loading {
             text-align: center;
+            padding: 30px;
             font-size: 20px;
             color: #999;
+        }
+        .qr-image {
+            max-width: 80px;
+            max-height: 80px;
+            cursor: pointer;
+        }
+        .estado {
+            padding: 5px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .estado.borrador {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .estado.finalizado {
+            background-color: #28a745;
+            color: white;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .search-bar input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-bar button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0 15px;
+            border-radius: 4px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Panel de Administración</h1>
+        <h1>Panel de Administración de Códigos QR</h1>
+        
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Buscar por URL o ID...">
+            <button onclick="buscarRegistros()"><i class="fas fa-search"></i></button>
+        </div>
+        
         <div class="loading" id="loading">Cargando registros...</div>
         <table id="records-table" style="display: none;">
             <thead>
@@ -71,6 +122,8 @@
                     <th>ID</th>
                     <th>URL</th>
                     <th>Fecha de Creación</th>
+                    <th>Estado</th>
+                    <th>Vista Previa</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -80,7 +133,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAw5Hior23_BYqV2AV74uPL5T7bdLONNw",
@@ -95,7 +148,38 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        async function cargarRegistros() {
+        // Función para formatear la fecha correctamente
+        function formatFecha(timestamp) {
+            if (!timestamp) return "Fecha no disponible";
+            
+            try {
+                // Si es un timestamp de Firestore
+                if (timestamp && typeof timestamp.toDate === 'function') {
+                    return timestamp.toDate().toLocaleString();
+                } 
+                // Si es un objeto Date o se puede convertir a uno
+                else if (timestamp instanceof Date || (timestamp.seconds && timestamp.nanoseconds)) {
+                    let fecha;
+                    if (timestamp instanceof Date) {
+                        fecha = timestamp;
+                    } else {
+                        fecha = new Date(timestamp.seconds * 1000);
+                    }
+                    return fecha.toLocaleString();
+                } 
+                // Si es una cadena de texto
+                else if (typeof timestamp === 'string') {
+                    return new Date(timestamp).toLocaleString();
+                }
+                // Para cualquier otro formato, mostrar como está
+                return String(timestamp);
+            } catch (e) {
+                console.error("Error formateando fecha:", e);
+                return "Formato de fecha inválido";
+            }
+        }
+        
+        async function cargarRegistros(searchTerm = '') {
             const loadingDiv = document.getElementById("loading");
             const recordsTable = document.getElementById("records-table");
             const tbody = recordsTable.querySelector("tbody");
@@ -103,7 +187,20 @@
             let registros = [];
 
             try {
-                const querySnapshot = await getDocs(collection(db, "qr_codes"));
+                let querySnapshot;
+                if (searchTerm) {
+                    // Si hay un término de búsqueda, filtramos los resultados
+                    const q = query(
+                        collection(db, "qr_codes"),
+                        where("url", ">=", searchTerm),
+                        where("url", "<=", searchTerm + '\uf8ff')
+                    );
+                    querySnapshot = await getDocs(q);
+                } else {
+                    // Si no hay término de búsqueda, obtenemos todos los registros
+                    querySnapshot = await getDocs(collection(db, "qr_codes"));
+                }
+                
                 querySnapshot.forEach((doc) => {
                     registros.push({ id: doc.id, ...doc.data() });
                 });
@@ -111,10 +208,21 @@
                 if (registros.length > 0) {
                     registros.forEach((registro) => {
                         const tr = document.createElement("tr");
+                        const estadoClass = registro.estado === "finalizado" ? "finalizado" : "borrador";
+                        const estadoText = registro.estado || "borrador";
+                        
+                        // Verificar si hay una imagen de vista previa disponible
+                        const imagenUrl = registro.imageUrl || registro.cloudImageUrl || "";
+                        const imagenHtml = imagenUrl ? 
+                            `<img src="${imagenUrl}" alt="QR Preview" class="qr-image" onclick="window.open('${imagenUrl}', '_blank')">` : 
+                            "No disponible";
+                        
                         tr.innerHTML = `
                             <td>${registro.id}</td>
-                            <td>${registro.url}</td>
-                            <td>${registro.createdAt.toDate().toLocaleString()}</td>
+                            <td>${registro.url || "N/A"}</td>
+                            <td>${formatFecha(registro.createdAt)}</td>
+                            <td><span class="estado ${estadoClass}">${estadoText}</span></td>
+                            <td>${imagenHtml}</td>
                             <td class="action-buttons">
                                 <button onclick="eliminarRegistro('${registro.id}')"><i class="fas fa-trash-alt"></i> Eliminar</button>
                             </td>
@@ -124,7 +232,7 @@
                     recordsTable.style.display = "table";
                     loadingDiv.style.display = "none";
                 } else {
-                    loadingDiv.textContent = "No hay registros.";
+                    loadingDiv.textContent = searchTerm ? "No se encontraron resultados para la búsqueda." : "No hay registros.";
                 }
             } catch (error) {
                 console.error("Error al cargar registros:", error);
@@ -140,13 +248,28 @@
                     cargarRegistros();
                 } catch (error) {
                     console.error("Error al eliminar registro:", error);
-                    alert("Error al eliminar registro.");
+                    alert("Error al eliminar registro: " + error.message);
                 }
             }
         };
 
+        window.buscarRegistros = function() {
+            const searchTerm = document.getElementById("search-input").value.trim();
+            cargarRegistros(searchTerm);
+        };
+
+        // Permitir búsqueda presionando Enter
+        document.getElementById("search-input").addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                window.buscarRegistros();
+            }
+        });
+
         // Cargar registros al cargar la página
         cargarRegistros();
+        
+        // Hacer funciones accesibles globalmente
+        window.cargarRegistros = cargarRegistros;
     </script>
 </body>
 </html>

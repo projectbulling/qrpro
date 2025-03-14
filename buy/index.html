@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema No Disponible</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%);
+            background-size: 200% 200%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 64rem;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .background-grid {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 1rem;
+            opacity: 0.2;
+        }
+
+        .grid-item {
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        .main-content {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(1rem);
+                    backdrop-filter: blur(1rem);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: translateY(0);
+            animation: floatContent 6s ease-in-out infinite;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: -1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(239, 68, 68, 0.9);
+            -webkit-backdrop-filter: blur(4px);
+                    backdrop-filter: blur(4px);
+            padding: 0.5rem 1.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .status-indicator {
+            width: 0.5rem;
+            height: 0.5rem;
+            background: rgba(254, 202, 202);
+            border-radius: 9999px;
+            animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        .main-icon {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .main-icon svg {
+            width: 6rem;
+            height: 6rem;
+            color: rgb(248, 113, 113);
+            animation: pulse 2s infinite;
+        }
+
+        .main-icon::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            width: 6rem;
+            height: 6rem;
+            background: rgba(239, 68, 68, 0.2);
+            border-radius: 9999px;
+            filter: blur(1rem);
+            animation: ping 2s infinite;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 1.5s ease;
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, white, rgb(191, 219, 254));
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: rgba(191, 219, 254, 0.8);
+            animation: fadeIn 2s ease;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease;
+        }
+
+        @media (min-width: 768px) {
+            .status-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.05);
+            -webkit-backdrop-filter: blur(4px);
+                    backdrop-filter: blur(4px);
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-card-header svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            color: rgb(147, 197, 253);
+        }
+
+        .status-card-title {
+            color: rgb(191, 219, 254);
+            font-weight: 600;
+        }
+
+        .status-card-value {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .contact-section {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 1rem;
+            padding: 1.5rem;
+            -webkit-backdrop-filter: blur(4px);
+                    backdrop-filter: blur(4px);
+            animation: fadeInUp 1.5s ease;
+        }
+
+        .contact-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .contact-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .contact-card {
+            position: relative;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .contact-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .contact-card-glow {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2));
+            border-radius: 0.75rem;
+            filter: blur(1rem);
+            transition: all 0.5s;
+            opacity: 0;
+        }
+
+        .contact-card:hover .contact-card-glow {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .contact-card-content {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            transition: all 0.3s;
+        }
+
+        .contact-card:hover .contact-card-content {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .contact-icon {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .contact-icon svg {
+            width: 2.5rem;
+            height: 2.5rem;
+            color: rgb(147, 197, 253);
+            transition: transform 0.3s;
+        }
+
+        .contact-card:hover .contact-icon svg {
+            transform: scale(1.1) rotate(5deg);
+            color: rgb(191, 219, 254);
+        }
+
+        .contact-method {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .contact-value {
+            color: rgba(191, 219, 254, 0.8);
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .contact-card:hover .contact-value {
+            color: rgba(255, 255, 255, 0.9);
+            transform: scale(1.05);
+        }
+
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: rgba(191, 219, 254, 0.6);
+            animation: fadeIn 2s ease;
+        }
+
+        .contact-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        @keyframes pulse {
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes ping {
+            75%, 100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes floatContent {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .sad-face {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            animation: sadFace 3s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes sadFace {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+            20% {
+                transform: rotate(-5deg);
+            }
+            40% {
+                transform: rotate(5deg);
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateX(-50%) translateY(0);
+            }
+            50% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 15s infinite linear;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0);
+            }
+            33% {
+                transform: translateY(-50px) translateX(50px) rotate(120deg);
+            }
+            66% {
+                transform: translateY(50px) translateX(-30px) rotate(240deg);
+            }
+            100% {
+                transform: translateY(0) translateX(0) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    <div class="container">
+        <div class="background-grid">
+            <div class="grid-item" style="animation-delay: 0ms"></div>
+            <div class="grid-item" style="animation-delay: 200ms"></div>
+            <div class="grid-item" style="animation-delay: 400ms"></div>
+            <div class="grid-item" style="animation-delay: 600ms"></div>
+            <div class="grid-item" style="animation-delay: 800ms"></div>
+            <div class="grid-item" style="animation-delay: 1000ms"></div>
+            <div class="grid-item" style="animation-delay: 1200ms"></div>
+            <div class="grid-item" style="animation-delay: 1400ms"></div>
+            <div class="grid-item" style="animation-delay: 1600ms"></div>
+        </div>
+
+        <div class="main-content animate__animated animate__fadeIn">
+            <div class="status-badge">
+                <div class="status-indicator"></div>
+                <span>Sistema No Disponible</span>
+            </div>
+
+            <div class="main-icon">
+                <i data-lucide="frown"></i>
+            </div>
+
+            <div class="header">
+                <h1 class="title">¡Oops! Ocurrió un problema</h1>
+                <p class="subtitle">
+                    Se presentó un inconveniente con nuestros servidores. Estamos trabajando para resolverlo.
+                </p>
+            </div>
+
+            <div class="status-grid">
+                <div class="status-card">
+                    <div class="status-card-header">
+                        <i data-lucide="clock"></i>
+                        <h3 class="status-card-title">Tiempo Estimado</h3>
+                    </div>
+                    <p class="status-card-value">Indefinido</p>
+                </div>
+                <div class="status-card">
+                    <div class="status-card-header">
+                        <i data-lucide="globe"></i>
+                        <h3 class="status-card-title">Estado</h3>
+                    </div>
+                    <p class="status-card-value">En Revisión</p>
+                </div>
+            </div>
+
+            <div class="contact-section">
+                <h2 class="contact-title">Canales de Comunicación</h2>
+                <div class="contact-grid">
+                    <a href="mailto:ovarinfinity@gmail.com" class="contact-link">
+                        <div class="contact-card">
+                            <div class="contact-card-glow"></div>
+                            <div class="contact-card-content">
+                                <div class="contact-icon">
+                                    <i data-lucide="mail"></i>
+                                </div>
+                                <h3 class="contact-method">Email</h3>
+                                <p class="contact-value">ovarinfinity@gmail.com</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="https://wa.me/+51987654321" class="contact-link">
+                        <div class="contact-card">
+                            <div class="contact-card-glow"></div>
+                            <div class="contact-card-content">
+                                <div class="contact-icon">
+                                    <i data-lucide="message-circle"></i>
+                                </div>
+                                <h3 class="contact-method">WhatsApp</h3>
+                                <p class="contact-value">Soporte en línea</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>
+                    Comuniquese con el proveedor, para solucionar el inconveniente
+                    <br>
+                    Agradecemos su paciencia y comprensión.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Create animated particles
+        function createParticles() {
+            const particles = document.getElementById('particles');
+            const particleCount = 25;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Random size between 5px and 15px
+                const size = Math.random() * 10 + 5;
+                particle.style.width = \`\${size}px\`;
+                particle.style.height = \`\${size}px\`;
+                
+                // Random position
+                particle.style.left = \`\${Math.random() * 100}%\`;
+                particle.style.top = \`\${Math.random() * 100}%\`;
+                
+                // Random animation delay
+                particle.style.animationDelay = \`\${Math.random() * 15}s\`;
+                
+                particles.appendChild(particle);
+            }
+        }
+        
+        // Add hover effect for contact cards
+        function setupContactCards() {
+            document.querySelectorAll('.contact-card').forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.classList.add('animate__animated', 'animate__pulse');
+                });
+                card.addEventListener('mouseleave', () => {
+                    setTimeout(() => {
+                        card.classList.remove('animate__animated', 'animate__pulse');
+                    }, 1000);
+                });
+            });
+        }
+        
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            setupContactCards();
+        });
+    </script>
+</body>
+</html>

@@ -1,9 +1,8 @@
-<!-- redirigir.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Redirigiendo...</title>
 </head>
 <body>
@@ -33,7 +32,34 @@
             const docSnap = await getDoc(docRef);
             
             if (docSnap.exists()) {
-                window.location.href = docSnap.data().url;
+                const data = docSnap.data();
+                
+                // Procesar fecha de vencimiento
+                const fechaVencimientoStr = data.fechaVencimiento; // Asegúrate de que se haya guardado en formato YYYY-MM-DD
+                if (!fechaVencimientoStr) {
+                    // Si no hay fecha de vencimiento, redirige normalmente
+                    window.location.href = data.url;
+                    return;
+                }
+                
+                // Obtener la hora/fecha actual en la zona horaria de Lima (Perú)
+                const fechaActualPeruStr = new Date().toLocaleString("en-US", { timeZone: "America/Lima" });
+                const fechaActualPeru = new Date(fechaActualPeruStr);
+                
+                // Convertir fecha de vencimiento a objeto Date (zona horaria local del navegador)
+                // Asumiendo que "fechaVencimientoStr" está en formato "YYYY-MM-DD"
+                const partesFecha = fechaVencimientoStr.split("-");
+                // Mes en JavaScript es base 0, por eso partesFecha[1] - 1
+                const fechaVencimiento = new Date(+partesFecha[0], partesFecha[1] - 1, +partesFecha[2]);
+                
+                // Comparar
+                if (fechaVencimiento <= fechaActualPeru) {
+                    // Fecha vencida o igual a la actual -> redirigir a bulling.html
+                    window.location.href = "buy";
+                } else {
+                    // Fecha no vencida -> redirigir normalmente
+                    window.location.href = data.url;
+                }
             } else {
                 document.body.innerHTML = "<h1>Error: QR no encontrado</h1>";
             }

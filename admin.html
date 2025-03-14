@@ -104,6 +104,12 @@
             border-radius: 4px;
             cursor: pointer;
         }
+        .edit-button {
+            background-color: #007bff !important;
+        }
+        .edit-button:hover {
+            background-color: #0056b3 !important;
+        }
     </style>
 </head>
 <body>
@@ -122,6 +128,7 @@
                     <th>ID</th>
                     <th>URL</th>
                     <th>Fecha de Creación</th>
+                    <th>Fecha de Vencimiento</th>
                     <th>Estado</th>
                     <th>Vista Previa</th>
                     <th>Acciones</th>
@@ -133,7 +140,16 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs, 
+            deleteDoc, 
+            doc, 
+            query, 
+            where, 
+            updateDoc 
+        } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAw5Hior23_BYqV2AV74uPL5T7bdLONNw",
@@ -148,34 +164,29 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Función para formatear la fecha correctamente
+        // Función para formatear la fecha (ya sea string, Firestore Timestamp, etc.)
         function formatFecha(timestamp) {
-            if (!timestamp) return "Fecha no disponible";
+            if (!timestamp) return "No disponible";
             
             try {
-                // Si es un timestamp de Firestore
                 if (timestamp && typeof timestamp.toDate === 'function') {
                     return timestamp.toDate().toLocaleString();
-                } 
-                // Si es un objeto Date o se puede convertir a uno
-                else if (timestamp instanceof Date || (timestamp.seconds && timestamp.nanoseconds)) {
-                    let fecha;
-                    if (timestamp instanceof Date) {
-                        fecha = timestamp;
-                    } else {
-                        fecha = new Date(timestamp.seconds * 1000);
-                    }
+                } else if (timestamp instanceof Date) {
+                    return timestamp.toLocaleString();
+                } else if (timestamp.seconds && timestamp.nanoseconds) {
+                    const fecha = new Date(timestamp.seconds * 1000);
                     return fecha.toLocaleString();
-                } 
-                // Si es una cadena de texto
-                else if (typeof timestamp === 'string') {
-                    return new Date(timestamp).toLocaleString();
+                } else if (typeof timestamp === 'string') {
+                    const fechaParseada = new Date(timestamp);
+                    if (isNaN(fechaParseada.getTime())) {
+                        return timestamp; // Mostrar la cadena si no se pudo parsear
+                    }
+                    return fechaParseada.toLocaleString();
                 }
-                // Para cualquier otro formato, mostrar como está
                 return String(timestamp);
             } catch (e) {
                 console.error("Error formateando fecha:", e);
-                return "Formato de fecha inválido";
+                return String(timestamp);
             }
         }
         
@@ -189,7 +200,7 @@
             try {
                 let querySnapshot;
                 if (searchTerm) {
-                    // Si hay un término de búsqueda, filtramos los resultados
+                    // Búsqueda por URL parcial
                     const q = query(
                         collection(db, "qr_codes"),
                         where("url", ">=", searchTerm),
@@ -197,12 +208,12 @@
                     );
                     querySnapshot = await getDocs(q);
                 } else {
-                    // Si no hay término de búsqueda, obtenemos todos los registros
+                    // Todos los registros
                     querySnapshot = await getDocs(collection(db, "qr_codes"));
                 }
                 
-                querySnapshot.forEach((doc) => {
-                    registros.push({ id: doc.id, ...doc.data() });
+                querySnapshot.forEach((docSnap) => {
+                    registros.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
                 if (registros.length > 0) {
@@ -211,20 +222,28 @@
                         const estadoClass = registro.estado === "finalizado" ? "finalizado" : "borrador";
                         const estadoText = registro.estado || "borrador";
                         
-                        // Verificar si hay una imagen de vista previa disponible
                         const imagenUrl = registro.imageUrl || registro.cloudImageUrl || "";
-                        const imagenHtml = imagenUrl ? 
-                            `<img src="${imagenUrl}" alt="QR Preview" class="qr-image" onclick="window.open('${imagenUrl}', '_blank')">` : 
-                            "No disponible";
-                        
+                        const imagenHtml = imagenUrl 
+                            ? `<img src="${imagenUrl}" alt="QR Preview" class="qr-image" onclick="window.open('${imagenUrl}', '_blank')">` 
+                            : "No disponible";
+
+                        // Muestra la fecha de vencimiento        
+                        const fechaVencimiento = formatFecha(registro.fechaVencimiento);
+
                         tr.innerHTML = `
                             <td>${registro.id}</td>
                             <td>${registro.url || "N/A"}</td>
                             <td>${formatFecha(registro.createdAt)}</td>
+                            <td>${fechaVencimiento}</td>
                             <td><span class="estado ${estadoClass}">${estadoText}</span></td>
                             <td>${imagenHtml}</td>
                             <td class="action-buttons">
-                                <button onclick="eliminarRegistro('${registro.id}')"><i class="fas fa-trash-alt"></i> Eliminar</button>
+                                <button class="edit-button" onclick="editarRegistro('${registro.id}', '${registro.url || ''}', '${registro.fechaVencimiento || ''}')">
+                                    <i class="fas fa-edit"></i> Editar
+                                </button>
+                                <button onclick="eliminarRegistro('${registro.id}')">
+                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                </button>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -232,7 +251,9 @@
                     recordsTable.style.display = "table";
                     loadingDiv.style.display = "none";
                 } else {
-                    loadingDiv.textContent = searchTerm ? "No se encontraron resultados para la búsqueda." : "No hay registros.";
+                    loadingDiv.textContent = searchTerm 
+                        ? "No se encontraron resultados para la búsqueda." 
+                        : "No hay registros.";
                 }
             } catch (error) {
                 console.error("Error al cargar registros:", error);
@@ -253,6 +274,27 @@
             }
         };
 
+        // Función para editar la URL y la fecha de vencimiento (usando prompt)
+        window.editarRegistro = async function (id, currentUrl, currentFechaVencimiento) {
+            const nuevaUrl = prompt("Ingrese la nueva URL:", currentUrl);
+            if (nuevaUrl === null) return; // Se canceló
+            const nuevaFecha = prompt("Ingrese la nueva fecha de vencimiento (YYYY-MM-DD):", currentFechaVencimiento);
+            if (nuevaFecha === null) return; // Se canceló
+
+            try {
+                await updateDoc(doc(db, "qr_codes", id), {
+                    url: nuevaUrl,
+                    fechaVencimiento: nuevaFecha,
+                    updatedAt: new Date()
+                });
+                alert("Registro actualizado exitosamente.");
+                cargarRegistros();
+            } catch (error) {
+                console.error("Error al actualizar registro:", error);
+                alert("Error al actualizar registro: " + error.message);
+            }
+        };
+
         window.buscarRegistros = function() {
             const searchTerm = document.getElementById("search-input").value.trim();
             cargarRegistros(searchTerm);
@@ -265,10 +307,10 @@
             }
         });
 
-        // Cargar registros al cargar la página
+        // Cargar registros al inicio
         cargarRegistros();
         
-        // Hacer funciones accesibles globalmente
+        // Exponer la función globalmente
         window.cargarRegistros = cargarRegistros;
     </script>
 </body>
